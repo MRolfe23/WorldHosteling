@@ -3,13 +3,13 @@
 // class
 class dbConfig
 {
-	//private $_host = "198.71.231.3";
+	//private $_host = "************";
 	private $_host = "localhost";
-	//private $_userame = "publicMike";
+	//private $_userame = "************";
 	private $_userame = "root";
-	//private $_password = "zdk~kZs]]@#H";
+	//private $_password = "************";
 	private $_password = "";
-	//private $_database = "worldhosteling";
+	//private $_database = "************";
 	private $_database = "finalproject";
 	
 	protected $connection;

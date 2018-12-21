@@ -3,13 +3,19 @@
 // class
 class dbConfig
 {
-	//private $_host = "************";
+	$ini = parse_ini_file('~/worldhosteling.ini',true);
+	/* Database config*/
+	$db_host		=$ini['hostedDB']['ip'];
+	$db_user		=$ini['hostedDB']['user'];
+	$db_pass		=$ini['hostedDB']['pass'];
+	$db_database	=$ini['hostedDB']['db'];
+	//private $_host = "$db_host";
 	private $_host = "localhost";
-	//private $_userame = "************";
+	//private $_userame = "$db_user";
 	private $_userame = "root";
-	//private $_password = "************";
+	//private $_password = "$db_pass";
 	private $_password = "";
-	//private $_database = "************";
+	//private $_database = "$db_database";
 	private $_database = "finalproject";
 	
 	protected $connection;

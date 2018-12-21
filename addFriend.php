@@ -3,6 +3,7 @@ session_start();
 // include the database and validation files
 include('class/crud.php');
 include('class/validation.php');
+include('connect.php');
 
 $crud = new crud();
 $validation = new validation();
@@ -14,10 +15,12 @@ if(isset($_POST['addFriend']))
 	$acctfriendID = $crud->escape_string($_POST['addUSER']);
 	
 	if ($acctID == $acctfriendID) {
-		$crud->execute("INSERT INTO acct_friend(ACCT_ID,ACCT_FRIEND_ID) VALUES('$acctID','$acctfriendID')");
+		$friend=$db->prepare("INSERT INTO acct_friend(ACCT_ID,ACCT_FRIEND_ID) VALUES(:id,:fid)");
+		$friend->execute(array('id'=>$acctID,'fid'=>$acctfriendID));
 	} else {
 		// adding the rows to table
-		$crud->execute("INSERT INTO acct_friend(ACCT_ID,ACCT_FRIEND_ID) VALUES('$acctID','$acctfriendID'), ('$acctfriendID','$acctID')");
+		$friend = $db->prepare("INSERT INTO acct_friend(ACCT_ID,ACCT_FRIEND_ID) VALUES(:id,:fid), (:fid,:id)");
+		$friend->execute(array('id'=>$acctID,'fid'=>$acctfriendID));
 	}
 	
 	

@@ -5,6 +5,7 @@ session_start();
 <?php
 	include('class/crud.php');
 	include('class/validation.php');
+	include('connect.php');
 	
 	$crud = new crud();
 	$validation = new validation();
@@ -103,11 +104,20 @@ session_start();
 				if(isset($_POST['submitHostel'])){
 					if($_POST['searchHostel'] != "") {
 						$search = $crud->escape_string(htmlspecialchars($_POST['searchHostel'], ENT_QUOTES, 'UTF-8'));
-						$query = $crud->GetData("SELECT * FROM hostel WHERE HOSTEL_name LIKE '%$search%' OR HOSTEL_city LIKE '%$search%' OR HOSTEL_state LIKE '%$search%'");
-						if($query == false) {
+						$query = $db->prepare("SELECT * FROM hostel WHERE HOSTEL_name LIKE ? OR HOSTEL_city LIKE ? OR HOSTEL_state LIKE ?");
+						$query->bindValue(1, "%$search%");
+						$query->bindValue(2, "%$search%");
+						$query->bindValue(3, "%$search%");
+
+						$query->execute();
+						if($query->rowCount() == 0) {
 							echo "<h2>No result found!</h2>";
 						} else {
-							$result = $crud->GetData("SELECT * FROM hostel WHERE HOSTEL_name LIKE '%$search%' OR HOSTEL_city LIKE '%$search%' OR HOSTEL_state LIKE '%$search%'");
+							$result = $db->prepare("SELECT * FROM hostel WHERE HOSTEL_name LIKE ? OR HOSTEL_city LIKE ? OR HOSTEL_state LIKE ?");
+							$result->bindValue(1, "%$search%");
+							$result->bindValue(2, "%$search%");
+							$result->bindValue(3, "%$search%");
+							$result->execute();
 							foreach($result as $key => $res)
 							{
 								if($count == 4){
@@ -200,8 +210,9 @@ session_start();
 									echo 	"<i class=\"w3-hide-small\">Login/Sign up to save hostels </i><img src=\"icons/icons8-id-verified-64.png\" data-toggle=\"modal\" data-target=\"#modalLRForm\"></img>";
 									echo "</a>";
 								} else {
-									$checkSaved = $crud->GetData("SELECT * FROM acct_hostel WHERE ACCT_ID = $_SESSION[acctID] AND HOSTEL_ID = $res[HOSTEL_ID]");
-									if($checkSaved == false) {
+									$checkSaved = $db->prepare("SELECT * FROM acct_hostel WHERE ACCT_ID = :id AND HOSTEL_ID = :hid");
+									$checkSaved->execute(array('id'=>$_SESSION['acctID'],'hid'=>$res['HOSTEL_ID']));
+									if($checkSaved->rowCount() == 0) {
 										echo "<button data-id=\"addHostel$res[HOSTEL_ID]\" name=\"addHostel\" id=\"addHostel$res[HOSTEL_ID]\" type=\"submit\" class=\"add btn btn-info\">Save hostel<i class=\"fa fa-plus ml-1\"></i></button>";
 									} else {
 										echo "<div class=\"btn btn-success\" disabled>Saved<i class=\"fa fa-check ml-1\"></i></div>";
@@ -411,7 +422,7 @@ session_start();
 		</script>
 		
 		<script async defer
-			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBQxSolkhP_38som6R2OHDxCaf6WrcUnXQ&callback=initMap">
+			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBmthmcfhIdRehicONQ1CBD8ai9QyWJVik&callback=initMap">
 		</script>
 	</body>
 </html>

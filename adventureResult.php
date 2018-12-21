@@ -6,6 +6,7 @@ session_start();
 	<?php
 	include('class/crud.php');
 	include('class/validation.php');
+	include('connect.php');
 	
 	$crud = new crud();
 	$validation = new validation();
@@ -89,12 +90,14 @@ session_start();
 			<!--<div class="row">-->
 				<?php
 				if(isset($_POST['adventureSubmit'])){
-					$query = $crud->GetData("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) ORDER BY rand() LIMIT 1"); 
+					$query = $db->prepare("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) ORDER BY rand() LIMIT 1");
+					$query->execute();
 					
-					if($query == false){
+					if($query->rowCount() == 0){
 						echo "<h2>No result found!</h2>";
 					}else{
-						$result = $crud->GetData("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) ORDER BY rand() LIMIT 1");
+						$result = $db->prepare("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) ORDER BY rand() LIMIT 1");
+						$result->execute();
 						foreach($result as $key => $res)
 						{
 							// Generate new modal for each hostel based on search string
@@ -182,8 +185,9 @@ session_start();
 								echo 	"<i class=\"w3-hide-small\">Login/Sign up to save hostels </i><img src=\"icons/icons8-id-verified-64.png\" data-toggle=\"modal\" data-target=\"#modalLRForm\"></img>";
 								echo "</a>";
 							} else {
-								$checkSaved = $crud->GetData("SELECT * FROM acct_hostel WHERE ACCT_ID = $_SESSION[acctID] AND HOSTEL_ID = $res[HOSTEL_ID]");
-								if($checkSaved == false) {
+								$checkSaved = $db->prepare("SELECT * FROM acct_hostel WHERE ACCT_ID = :id AND HOSTEL_ID = :hid");
+								$checkSaved->execute(array('id'=>$_SESSION['acctID'],'hid'=>$res['HOSTEL_ID']));
+								if($checkSaved->rowCount() == 0) {
 									echo "<button data-id=\"addHostel$res[HOSTEL_ID]\" name=\"addHostel\" id=\"addHostel$res[HOSTEL_ID]\" type=\"submit\" class=\"add btn btn-info\">Save hostel<i class=\"fa fa-plus ml-1\"></i></button>";
 								} else {
 									echo "<div class=\"btn btn-success\" disabled>Saved<i class=\"fa fa-check ml-1\"></i></div>";
@@ -507,7 +511,7 @@ session_start();
 			});
 		</script>
 		<script async defer
-			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBQxSolkhP_38som6R2OHDxCaf6WrcUnXQ&callback=initMap">
+			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBmthmcfhIdRehicONQ1CBD8ai9QyWJVik&callback=initMap">
 		</script>
 	</body>
 </html>

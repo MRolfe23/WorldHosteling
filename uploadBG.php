@@ -3,6 +3,7 @@ session_start();
 // include the database and validation files
 include('class/crud.php');
 include('class/validation.php');
+include('connect.php');
 
 $crud = new crud();
 $validation = new validation();
@@ -30,7 +31,8 @@ if(in_array($file_extension,$image_ext)){
 		$_SESSION['acctBG'] = $filename;
 
 		// adding the rows to table
-		$result = $crud->execute("UPDATE acct SET ACCT_background = '$filename' WHERE ACCT_ID = '$acctID'");
+		$result = $db->prepare("UPDATE acct SET ACCT_profile = :file WHERE ACCT_ID = :id");
+		$result->execute(array('file'=>$filename,'id'=>$acctID));
 	}
 }
 

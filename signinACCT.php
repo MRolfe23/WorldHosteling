@@ -3,6 +3,7 @@ session_start();
 
 include('class/crud.php');
 include('class/validation.php');
+include('connect.php');
 
 $crud = new crud();
 $validation = new validation();
@@ -20,7 +21,8 @@ if(isset($_POST['signinACCT']))
 		header("Location:index.php");
 	} else {
 		
-		$result = $crud->GetData("SELECT * FROM acct WHERE ACCT_email = '$ACCT_email'");
+		$result = $db->prepare("SELECT * FROM acct WHERE ACCT_email = :email");
+		$result->execute(array('email'=>$ACCT_email));
 		foreach($result as $res)
 		{
 			$id = $res['ACCT_ID'];

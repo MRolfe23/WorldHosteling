@@ -2,6 +2,7 @@
 session_start();
 include('class/crud.php');
 include('class/validation.php');
+include('connect.php');
 
 $crud = new crud();
 $validation = new validation();
@@ -10,7 +11,8 @@ if (!isset($_SESSION['currentPublicPageID'])) {
 header("Location:account.php");
 }
 
-$specificFriend = $crud->GetData("SELECT ACCT_fname,ACCT_lname,ACCT_profile,ACCT_background FROM acct WHERE ACCT_ID =".$_SESSION['currentPublicPageID']);
+$specificFriend = $db->prepare("SELECT ACCT_fname,ACCT_lname,ACCT_profile,ACCT_background FROM acct WHERE ACCT_ID = :fid");
+$specificFriend->execute(array('fid'=>$_SESSION['currentPublicPageID']));
 foreach($specificFriend as $key => $friend) {
 	$friendID = $_SESSION['currentPublicPageID'];
 	$friendFN = $friend['ACCT_fname'];
@@ -110,12 +112,14 @@ foreach($specificFriend as $key => $friend) {
 							<button onclick="myFunction('Demo1')" class="w3-button w3-block w3-theme-l1 w3-left-align"><i class="fa fa-users fa-fw w3-margin-right"></i> <?php echo "$friendFN's"; ?> Friends</button>
 							<div id="Demo1" class="w3-hide w3-container">
 								<?php
-								$result = $crud->GetData("SELECT * FROM acct WHERE ACCT_ID in (SELECT ACCT_FRIEND_ID FROM acct_friend WHERE ACCT_ID =$friendID)");
-								if ($result == false) {
+								$result = $db->prepare("SELECT * FROM acct WHERE ACCT_ID in (SELECT ACCT_FRIEND_ID FROM acct_friend WHERE ACCT_ID = :fid)");
+								$result->execute(array('fid'=>$friendID));
+								if ($result->rowCount() == 0) {
 									echo "<h3>$friendFN must be new! Add her as a friend to share your adventures $friendFN! =]";
 								} else {
-									$friendCheck = $crud->GetData("SELECT * FROM acct_friend WHERE (ACCT_ID = ".$_SESSION['acctID']." AND ACCT_FRIEND_ID =$friendID) OR (ACCT_ID = $friendID AND ACCT_FRIEND_ID =".$_SESSION['acctID'].")");
-									if ($friendCheck == false) {
+									$friendCheck = $db->prepare("SELECT * FROM acct_friend WHERE (ACCT_ID = :id AND ACCT_FRIEND_ID =:fid) OR (ACCT_ID = :fid AND ACCT_FRIEND_ID =:id)");
+									$friendCheck->execute(array('id'=>$_SESSION['acctID'],'fid'=>$friendID));
+									if ($friendCheck->rowCount() == 0) {
 										foreach($result as $key => $res) {
 											echo "<form name=\"viewFriend\" action=\"viewFriendPage.php\" method=\"post\" class=\"viewFriend w3-container w3-card w3-white w3-round w3-margin\" role=\"document\"><br>";
 											echo 	"<div class=\"viewFriend\" onClick=\"document.forms['friend'].submit();\">";
@@ -147,16 +151,16 @@ foreach($specificFriend as $key => $friend) {
 								<div class="w3-row-padding">
 									<br>
 									<?php
-									$query = $crud->GetData("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = $friendID)"); 
-
-
-									if($query == false){
+									$query = $db->prepare("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = :fid)");
+									
+									$query->execute(array('fid'=>$friendID));
+									if($query->rowCount() == 0){
 										echo "<h2>$friendFN has no saved hostels!</h2>";
 									}else{
-										$result = $crud->GetData("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = $friendID)");
+										$result = $db->prepare("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = :fid)");
+										$result->execute(array('fid'=>$friendID));
 										foreach($result as $key => $res)
 										{
-
 											// hold Location data to take from javascript to put into modal
 											echo "<input name=\"hostelLat$res[HOSTEL_ID]\" id=\"hostelLat$res[HOSTEL_ID]\" value=\"$res[HOSTEL_latitude]\" type=\"hidden\">";
 											echo "<input name=\"hostelLong$res[HOSTEL_ID]\" id=\"hostelLong$res[HOSTEL_ID]\" value=\"$res[HOSTEL_longitude]\" type=\"hidden\">";
@@ -285,8 +289,9 @@ foreach($specificFriend as $key => $friend) {
 				<div class="w3-col m7">
 
 					<?php
-					$friendCheck = $crud->GetData("SELECT * FROM acct_friend WHERE (ACCT_ID = ".$_SESSION['acctID']." AND ACCT_FRIEND_ID =$friendID) OR (ACCT_ID = $friendID AND ACCT_FRIEND_ID =".$_SESSION['acctID'].")");
-					if ($friendCheck == false) {
+					$friendCheck = $db->prepare("SELECT * FROM acct_friend WHERE (ACCT_ID = :id AND ACCT_FRIEND_ID =:fid) OR (ACCT_ID = :fid AND ACCT_FRIEND_ID =:id)");
+					$friendCheck->execute(array('id'=>$_SESSION['acctID'],'fid'=>$friendID));
+					if ($friendCheck->rowCount() == 0) {
 						echo "<div class=\"w3-container w3-card w3-white w3-round w3-margin\"><br>";
 						echo 	"<h4>Add $friendFN as a friend!</h4><br>";
 						echo 	"<hr class=\"w3-clear\">";
@@ -309,11 +314,13 @@ foreach($specificFriend as $key => $friend) {
 						echo		"</div>";
 						echo	"</div>";
 						echo "</div>";
-						$friends = $crud->GetData("SELECT * FROM post WHERE ACCT_ID = ($friendID AND postTO = $friendID) OR postTO =$friendID ORDER BY POST_date DESC;");
+						$friends = $db->prepare("SELECT * FROM post WHERE ACCT_ID = (:fid AND postTO = :fid) OR postTO =:fid ORDER BY POST_date DESC;");
+						$friends->execute(array('fid'=>$friendID));
 						// creates display of all comments
 						foreach($friends as $key => $friend)
 						{
-							$poster = $crud->GetData("SELECT ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID =".$friend['ACCT_ID']);
+							$poster = $db->prepare("SELECT ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID = :fid");
+							$poster->execute(array('fid'=>$friend['ACCT_ID']));
 							foreach($poster as $key => $pos) {
 								echo "<div id=\"post".$friend['POST_ID']."\" class=\"w3-container w3-card w3-white w3-round w3-margin\"><br>";
 								echo	"<a name=\"viewFriend\" class=\"viewFriend\" href=\"viewFriendPage.php?id=".$friend['ACCT_ID']."\">";
@@ -321,7 +328,8 @@ foreach($specificFriend as $key => $friend) {
 								echo	"</a>";
 								echo	"<span class=\"w3-right w3-opacity\">".$friend['POST_date']."</span>";
 								echo	"<a name=\"viewFriend\" class=\"viewFriend\" href=\"viewFriendPage.php?id=".$friend['ACCT_ID']."\">";
-								$postTO = $crud->GetData("SELECT ACCT_ID,ACCT_fname,ACCT_lname FROM acct WHERE ACCT_ID =".$friend['postTO']);
+								$postTO = $db->prepare("SELECT ACCT_ID,ACCT_fname,ACCT_lname FROM acct WHERE ACCT_ID =:pid");
+								$postTO->execute(array('pid'=>$friend['postTO']));
 								foreach($postTO as $key => $to) {
 									echo	"<h4>".$pos['ACCT_fname']." ".$pos['ACCT_lname']."</h4></a><p>posted to:<a name=\"viewFriend\" class=\"viewFriend\" href=\"viewFriendPage.php?id=".$to['ACCT_ID']."\"> ".$to['ACCT_fname']." ".$to['ACCT_lname']."</p></a><br>";
 									echo	"<hr class=\"w3-clear\">";
@@ -335,9 +343,11 @@ foreach($specificFriend as $key => $friend) {
 									echo			"<button id=\"addCOMMENT\" name=\"addCOMMENT\" type=\"submit\" class=\"w3-button w3-theme-d2\"><i class=\"fa fa-comment\"></i>  Comment</button><br><br>";
 									echo		"</form>";
 
-									$comment = $crud->GetData("SELECT * FROM comment WHERE POST_ID =".$friend['POST_ID']);
+									$comment = $db->prepare("SELECT * FROM comment WHERE POST_ID =:pid");
+									$comment->execute(array('pid'=>$friend['POST_ID']));
 									foreach($comment as $key => $com) {
-										$commentor = $crud->GetData("SELECT ACCT_ID,ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID =".$com['ACCT_ID']);
+										$commentor = $db->prepare("SELECT ACCT_ID,ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID =:cid");
+										$commentor->execute(array('cid'=>$com['ACCT_ID']));
 										foreach($commentor as $key => $coms) {
 											//echo	"<hr class=\"w3-clear\">";
 											echo	"<hr class=\"w3-clear\">";
@@ -371,8 +381,9 @@ foreach($specificFriend as $key => $friend) {
 							<p>Friend Status:</p>
 							
 							<?php
-							$friendCheck = $crud->GetData("SELECT * FROM acct_friend WHERE (ACCT_ID = ".$_SESSION['acctID']." AND ACCT_FRIEND_ID =$friendID) OR (ACCT_ID = $friendID AND ACCT_FRIEND_ID =".$_SESSION['acctID'].")");
-							if ($friendCheck == false) {
+							$friendCheck = $db->prepare("SELECT * FROM acct_friend WHERE (ACCT_ID = :id AND ACCT_FRIEND_ID =:fid) OR (ACCT_ID = :fid AND ACCT_FRIEND_ID =:id)");
+							$friendCheck->execute(array('id'=>$_SESSION['acctID'],'fid'=>$friendID));
+							if ($friendCheck->rowCount() == 0) {
 								echo "<span>You are currently not friends.<br>Click the green checkmark to add!</span>";
 								echo "<form name=\"addFriend\" action=\"addFriend.php\" method=\"post\" class=\"w3-row w3-opacity\" role=\"document\">";
 								echo		"<input type=\"hidden\" name=\"addID\" id=\"addID\" value=\"".$_SESSION['acctID']."\"/>";

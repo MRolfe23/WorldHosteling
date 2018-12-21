@@ -2,6 +2,7 @@
 session_start();
 include('class/crud.php');
 include('class/validation.php');
+include('connect.php');
 
 $crud = new crud();
 $validation = new validation();
@@ -100,7 +101,8 @@ header("Location:index.php");
 							<button onclick="myFunction('Demo1')" class="w3-button w3-block w3-theme-l1 w3-left-align"><i class="fa fa-users fa-fw w3-margin-right"></i> My Friends</button>
 							<div id="Demo1" class="w3-hide w3-container" >
 								<?php
-								$result = $crud->GetData("SELECT ACCT_ID, ACCT_fname, ACCT_lname, ACCT_profile FROM acct WHERE ACCT_ID in (SELECT ACCT_FRIEND_ID FROM acct_friend WHERE ACCT_ID =".$_SESSION['acctID'].")");
+								$result = $db->prepare("SELECT ACCT_ID, ACCT_fname, ACCT_lname, ACCT_profile FROM acct WHERE ACCT_ID in (SELECT ACCT_FRIEND_ID FROM acct_friend WHERE ACCT_ID = :id)");
+								$result->execute(array('id'=>$_SESSION['acctID']));
 								if ($result == false) {
 									echo "<h3>You must be new! Search for some friends to share your adventures with! =]";
 								} else {
@@ -122,13 +124,14 @@ header("Location:index.php");
 								<div class="w3-row-padding">
 									<br>
 									<?php
-									$query = $crud->GetData("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = ".$_SESSION['acctID'].")"); 
-
+									$query = $db->prepare("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = :id)"); 
+									$query->execute(array('id'=>$_SESSION['acctID']));
 
 									if($query == false){
 										echo "<h2>You have no saved hostels!</h2>";
 									}else{
-										$result = $crud->GetData("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = ".$_SESSION['acctID'].")");
+										$result = $db->prepare("select * from hostel where HOSTEL_ID in (select HOSTEL_ID from acct_hostel where ACCT_ID = :id)");
+										$result->execute(array('id'=>$_SESSION['acctID']));
 										foreach($result as $key => $res)
 										{
 
@@ -189,11 +192,13 @@ header("Location:index.php");
 					</div>
 					
 					<?php
-					$friends = $crud->GetData("SELECT * FROM post WHERE ACCT_ID in (SELECT ACCT_FRIEND_ID FROM acct_friend WHERE ACCT_ID = $_SESSION[acctID]) ORDER BY POST_date DESC;");
+					$friends = $db->prepare("SELECT * FROM post WHERE ACCT_ID in (SELECT ACCT_FRIEND_ID FROM acct_friend WHERE ACCT_ID = :id) ORDER BY POST_date DESC;");
+					$friends->execute(array('id'=>$_SESSION['acctID']));
 					// creates display of all posts and comments
 					foreach($friends as $key => $friend)
 					{
-						$poster = $crud->GetData("SELECT ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID =".$friend['ACCT_ID']);
+						$poster = $db->prepare("SELECT ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID = :fid");
+						$poster->execute(array('fid'=>$friend['ACCT_ID']));
 						foreach($poster as $key => $pos) {
 							echo "<div id=\"post".$friend['POST_ID']."\" class=\"w3-container w3-card w3-white w3-round w3-margin\"><br>";
 							echo	"<a name=\"viewFriend\" class=\"viewFriend\" href=\"viewFriendPage.php?id=".$friend['ACCT_ID']."\">";
@@ -201,7 +206,8 @@ header("Location:index.php");
 							echo	"</a>";
 							echo	"<span class=\"w3-right w3-opacity\">".$friend['POST_date']."</span>";
 							echo	"<a name=\"viewFriend\" class=\"viewFriend\" href=\"viewFriendPage.php?id=".$friend['ACCT_ID']."\">";
-							$postTO = $crud->GetData("SELECT ACCT_ID,ACCT_fname,ACCT_lname FROM acct WHERE ACCT_ID =".$friend['postTO']);
+							$postTO = $db->prepare("SELECT ACCT_ID,ACCT_fname,ACCT_lname FROM acct WHERE ACCT_ID = :pid");
+							$postTO->execute(array('pid'=>$friend['postTO']));
 							foreach($postTO as $key => $to) {
 								echo	"<h4>".$pos['ACCT_fname']." ".$pos['ACCT_lname']."</h4></a><p>posted to:<a name=\"viewFriend\" class=\"viewFriend\" href=\"viewFriendPage.php?id=".$to['ACCT_ID']."\"> ".$to['ACCT_fname']." ".$to['ACCT_lname']."</p></a><br>";
 								echo	"<hr class=\"w3-clear\">";
@@ -214,9 +220,11 @@ header("Location:index.php");
 								echo			"<br><br>";
 								echo			"<button id=\"addCOMMENT\" name=\"addCOMMENT\" data-id=\"".$friend['POST_ID']."\" type=\"submit\" class=\"w3-button w3-theme-d2\"><i class=\"fa fa-comment\"></i>  Comment</button><br><br>";
 								echo		"</form>";
-								$comment = $crud->GetData("SELECT * FROM comment WHERE POST_ID =".$friend['POST_ID']);
+								$comment = $db->prepare("SELECT * FROM comment WHERE POST_ID = :fid");
+								$comment->execute(array('fid'=>$friend['POST_ID']));
 								foreach($comment as $key => $com) {
-									$commentor = $crud->GetData("SELECT ACCT_ID,ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID =".$com['ACCT_ID']);
+									$commentor = $db->prepare("SELECT ACCT_ID,ACCT_fname,ACCT_lname,ACCT_profile FROM acct WHERE ACCT_ID = :cid");
+									$commentor->execute(array('cid'=>$com['ACCT_ID']));
 									foreach($commentor as $key => $coms) {
 										//echo	"<hr class=\"w3-clear\">";
 										echo	"<hr class=\"w3-clear\">";

@@ -4,6 +4,7 @@ session_start();
 // include the database and validation files
 include('class/crud.php');
 include('class/validation.php');
+include('connect.php');
 
 $crud = new crud();
 $validation = new validation();
@@ -19,9 +20,10 @@ if(isset($_POST['addACCT']))
 	$email = "";
 	
 	$msg = $validation->check_empty($_POST, array('ACCT_fname','ACCT_lname','ACCT_email','ACCT_pass','ACCT_pass2'));
-	// validate email here later
+
 	
-	$result = $crud->GetData("SELECT ACCT_email FROM acct WHERE ACCT_email = '$ACCT_email'");
+	$result = $db->prepare("SELECT ACCT_email FROM acct WHERE ACCT_email = :email");
+	$result->execute(array('email'=>$ACCT_email));
 	foreach($result as $res)
 	{
 		$email = $res['ACCT_email'];
@@ -31,9 +33,13 @@ if(isset($_POST['addACCT']))
 		header("Location:index.php");
 	} else {
 		$ACCT_pass = crypt($_POST['ACCT_pass'], '$2a$07$YourSaltIsA22ChrString$');
-		$crud->execute("INSERT INTO acct (ACCT_fname,ACCT_lname,ACCT_email,ACCT_pass,ACCT_profile) VALUES('$ACCT_fname','$ACCT_lname','$ACCT_email','$ACCT_pass','$ACCT_profile')");
 		
-		$result = $crud->GetData("SELECT * FROM acct WHERE ACCT_email = '$ACCT_email'");
+		$result = $db->prepare("INSERT INTO acct (ACCT_fname,ACCT_lname,ACCT_email,ACCT_pass,ACCT_profile) VALUES(:fname,:lname,:email,:pass,:prof)");
+		$result->execute(array('fname'=>$ACCT_fname,'lname'=>$ACCT_lname,'email'=>$ACCT_email,'pass'=>$ACCT_pass,'prof'=>$ACCT_profile));
+		
+		
+		$result = $db->prepare("SELECT * FROM acct WHERE ACCT_email = :email");
+		$result->execute(array('email'=>$ACCT_email));
 		foreach($result as $res)
 		{
 			$_SESSION['acctID'] = $res[ACCT_ID];
@@ -43,7 +49,8 @@ if(isset($_POST['addACCT']))
 			$_SESSION['acctPR'] = $res[ACCT_profile];
 			$_SESSION['acctBG'] = $res[ACCT_background];
 		}
-		$crud->execute("INSERT INTO acct_friend(ACCT_ID,ACCT_FRIEND_ID) VALUES('$_SESSION[acctID]','$_SESSION[acctID]')");
+		$result = $db->prepare("INSERT INTO acct_friend(ACCT_ID,ACCT_FRIEND_ID) VALUES(:id1, :id2)");
+		$result->execute(array('id1'=>$_SESSION['acctID'],'id2'=>$_SESSION['acctID']));
 		header("Location:account.php");
 
 	}

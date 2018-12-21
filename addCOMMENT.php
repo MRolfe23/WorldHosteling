@@ -3,6 +3,7 @@ session_start();
 // include the database and validation files
 include('class/crud.php');
 include('class/validation.php');
+include('connect.php');
 
 $crud = new crud();
 $validation = new validation();
@@ -20,7 +21,8 @@ if(isset($_POST['addCOMMENT']))
 		// all fields are filled
 		// insert into db
 								
-		$result = $crud->execute("INSERT INTO comment(COMMENT_comment,POST_ID,ACCT_ID) VALUES('$COMMENT_comment','$POST_ID','$ACCT_ID')");
+		$result = $db->prepare("INSERT INTO comment(COMMENT_comment,POST_ID,ACCT_ID) VALUES(:comment,:pid,:id)");
+		$result->execute(array('comment'=>$COMMENT_comment,'pid'=>$POST_ID,'id'=>$ACCT_ID));
 		header('Location: ' . $_SERVER["HTTP_REFERER"] .'#post'.$POST_ID);
 		exit;
 	} else {

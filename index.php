@@ -6,6 +6,7 @@ session_start();
 	<?php
 	include('class/crud.php');
 	include('class/validation.php');
+	include('connect.php');
 	
 	$crud = new crud();
 	$validation = new validation();
@@ -115,7 +116,8 @@ session_start();
 					<li data-target="#carouselExampleIndicators" data-slide-to="4"></li>
 				</ol>
 				<?php
-				$Hostels = $crud->GetData("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) AND HOSTEL_rating > 4 ORDER BY rand() LIMIT 1");
+				$Hostels = $db->prepare("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) AND HOSTEL_rating > 4 ORDER BY rand() LIMIT 1");
+				$Hostels->execute();
 				foreach($Hostels as $key => $hostel) {
 					
 
@@ -179,8 +181,9 @@ session_start();
 						echo 	"<i class=\"w3-hide-small\">Login/Sign up to save hostels </i><img src=\"icons/icons8-id-verified-64.png\" data-toggle=\"modal\" data-target=\"#modalLRForm\"></img>";
 						echo "</a>";
 					} else {
-						$checkSaved = $crud->GetData("SELECT * FROM acct_hostel WHERE ACCT_ID = $_SESSION[acctID] AND HOSTEL_ID = $hostel[HOSTEL_ID]");
-						if($checkSaved == false) {
+						$checkSaved = $db->prepare("SELECT * FROM acct_hostel WHERE ACCT_ID = :id AND HOSTEL_ID = :hid");
+						$checkSaved->execute(array('id'=>$_SESSION['acctID'],'hid'=>$hostel['HOSTEL_ID']));
+						if($checkSaved->rowCount() == 0) {
 							echo "<button data-id=\"addHostel$hostel[HOSTEL_ID]\" name=\"addHostel\" id=\"addHostel$hostel[HOSTEL_ID]\" type=\"submit\" class=\"add btn btn-info\">Save hostel<i class=\"fa fa-plus ml-1\"></i></button>";
 						} else {
 							echo "<div class=\"btn btn-success\" disabled>Saved<i class=\"fa fa-check ml-1\"></i></div>";
@@ -193,7 +196,8 @@ session_start();
 					echo	"</form>";
 					echo "</div>";
 				}
-				$Hostels = $crud->GetData("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) AND HOSTEL_rating > 4 AND HOSTEL_ID <> $hostel[HOSTEL_ID] ORDER BY rand() LIMIT 4");
+				$Hostels = $db->prepare("SELECT * FROM hostel WHERE HOSTEL_ID < (SELECT MAX(HOSTEL_ID) FROM hostel) AND HOSTEL_rating > 4 AND HOSTEL_ID <> :hid ORDER BY rand() LIMIT 4");
+				$Hostels->execute(array(':hid'=>$hostel['HOSTEL_ID']));
 				foreach($Hostels as $key => $hostel) {
 
 						echo "<div class=\"carousel-item\">";
@@ -257,7 +261,8 @@ session_start();
 						echo 	"<i class=\"w3-hide-small\">Login/Sign up to save hostels </i><img src=\"icons/icons8-id-verified-64.png\" data-toggle=\"modal\" data-target=\"#modalLRForm\"></img>";
 						echo "</a>";
 					} else {
-						$checkSaved = $crud->GetData("SELECT * FROM acct_hostel WHERE ACCT_ID = $_SESSION[acctID] AND HOSTEL_ID = $hostel[HOSTEL_ID]");
+						$checkSaved = $db->prepare("SELECT * FROM acct_hostel WHERE ACCT_ID = :id AND HOSTEL_ID = :hid");
+						$checkSaved->execute(array('id'=>$_SESSION['acctID'],'hid'=>$hostel['HOSTEL_ID']));
 						if($checkSaved == false) {
 							echo "<button data-id=\"addHostel$hostel[HOSTEL_ID]\" name=\"addHostel\" id=\"addHostel$hostel[HOSTEL_ID]\" type=\"submit\" class=\"add btn btn-info\">Save hostel<i class=\"fa fa-plus ml-1\"></i></button>";
 						} else {
